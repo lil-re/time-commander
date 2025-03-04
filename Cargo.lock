@@ -697,6 +697,7 @@ dependencies = [
  "crossterm",
  "futures",
  "ratatui",
+ "serde",
  "time",
  "tokio",
 ]

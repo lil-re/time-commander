@@ -1,9 +1,12 @@
+mod models;
+mod state;
+
 use ratatui::{
   backend::CrosstermBackend,
   layout::{Constraint, Direction, Layout},
   style::{Color, Style, Stylize},
   text::{Span},
-  widgets::{Block, Borders, Table, TableState, Row, List},
+  widgets::{Block, Borders, Table, Row, List},
   Terminal,
 };
 use crossterm::{
@@ -12,49 +15,13 @@ use crossterm::{
 };
 use std::{
   io,
-  time::{Duration, Instant},
+  time::{Duration},
 };
-use ratatui::widgets::ListState;
 use tokio::time;
-
-#[derive(Default)]
-struct App {
-  timer_running: bool,
-  start_time: Option<Instant>,
-  log: Vec<String>,
-  log_state: ListState,
-  table_state: TableState,
-}
-
-impl App {
-  fn start_timer(&mut self) {
-    if !self.timer_running {
-      self.timer_running = true;
-      self.start_time = Some(Instant::now());
-      self.log.push("Timer started.".to_string());
-    }
-  }
-
-  fn stop_timer(&mut self) {
-    if self.timer_running {
-      match self.start_time {
-        Some(start_time) => {
-          let elapsed = format_duration(start_time.elapsed());
-          self.log.push(format!(
-            "Timer stopped. Duration: {}.",
-            elapsed
-          ));
-          self.timer_running = false;
-          self.start_time = None;
-        }
-        None => {}
-      }
-    }
-  }
-}
+use crate::state::AppState;
 
 fn format_duration(elapsed: Duration) -> String {
-  let total_seconds =elapsed.as_secs();
+  let total_seconds = elapsed.as_secs();
   let hours = total_seconds / 3600;
   let minutes = (total_seconds % 3600) / 60;
   let seconds = total_seconds % 60;
@@ -66,7 +33,7 @@ async fn run_app() -> io::Result<()> {
   let stdout = io::stdout();
   let backend = CrosstermBackend::new(stdout);
   let mut terminal = Terminal::new(backend)?;
-  let mut app = App::default();
+  let mut app = AppState::default();
 
   loop {
     terminal.draw(|f| {
@@ -89,7 +56,7 @@ async fn run_app() -> io::Result<()> {
       };
 
       let log_text = app
-          .log
+          .timer_logs
           .iter()
           .map(|log| Span::raw(log.clone()))
           .collect::<Vec<_>>();
@@ -99,7 +66,7 @@ async fn run_app() -> io::Result<()> {
           .highlight_symbol(">>")
           .repeat_highlight_symbol(true);
 
-      f.render_stateful_widget(list, chunks[0], &mut app.log_state);
+      f.render_stateful_widget(list, chunks[0], &mut app.logs_state);
       f.render_widget(ratatui::widgets::Paragraph::new(timer_text), chunks[0]);
 
       // History
