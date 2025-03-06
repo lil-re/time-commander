@@ -1,5 +1,6 @@
 mod models;
 mod state;
+mod database;
 
 use ratatui::{
   backend::CrosstermBackend,
@@ -18,6 +19,9 @@ use std::{
   time::{Duration},
 };
 use tokio::time;
+use clap::Parser;
+use crate::database::connection;
+use crate::database::migrations::run_migrations;
 use crate::state::AppState;
 
 fn format_duration(elapsed: Duration) -> String {
@@ -115,7 +119,25 @@ async fn run_app() -> io::Result<()> {
   Ok(())
 }
 
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+  /// Init app and database
+  #[arg(short, long, default_value_t = false)]
+  init: bool,
+}
+
 #[tokio::main]
 async fn main() -> io::Result<()> {
+  if let Err(e) = connection::establish_connection() {
+    eprintln!("Error establishing connection: {}", e);
+  }
+
+  let args = Args::parse();
+
+  if args.init {
+    run_migrations().expect("TODO: panic message");
+  }
+
   run_app().await
 }
