@@ -14,7 +14,7 @@ pub fn create_record(record: &Record) -> Option<()> {
     match response {
         Ok(_) => Some(()),
         Err(error) => {
-            println!("WISHLIST API => {}", error);
+            println!("RECORD API => {}", error);
             None
         }
     }
@@ -33,7 +33,7 @@ pub fn remove_record(record: &Record) -> Option<()> {
     match response {
         Ok(_) => Some(()),
         Err(error) => {
-            println!("WISHLIST API => {}", error);
+            println!("RECORD API => {}", error);
             None
         }
     }

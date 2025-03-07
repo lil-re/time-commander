@@ -1,6 +1,6 @@
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use ratatui::widgets::{ListState, TableState};
-use crate::format_duration;
+use crate::helpers::format_duration;
 use crate::models::Record;
 
 #[derive(Default)]

@@ -1,0 +1,108 @@
+use std::io;
+use std::time::Duration;
+use crossterm::{event, terminal};
+use crossterm::event::{KeyCode, KeyEvent};
+use ratatui::backend::CrosstermBackend;
+use ratatui::layout::{Constraint, Direction, Layout};
+use ratatui::prelude::{Color, Span, Style};
+use ratatui::{Frame, Terminal};
+use ratatui::widgets::{Block, Borders, List, Row, Table};
+use crate::helpers::format_duration;
+use crate::state::AppState;
+
+pub async fn run_app() -> io::Result<()> {
+  terminal::enable_raw_mode()?;
+  let stdout = io::stdout();
+  let backend = CrosstermBackend::new(stdout);
+  let mut terminal = Terminal::new(backend)?;
+  let mut app = AppState::default();
+
+  loop {
+    terminal.draw(|f| {
+      let area = f.area();
+      let chunks = Layout::default()
+          .direction(Direction::Horizontal)
+          .margin(1)
+          .constraints([Constraint::Percentage(30), Constraint::Percentage(70)].as_ref())
+          .split(area);
+
+      render_timer(&mut app, f, &chunks);
+      render_history(f, chunks);
+    })?;
+
+    handle_inputs(&mut app);
+    tokio::time::sleep(Duration::from_millis(100)).await;
+  }
+
+  terminal::disable_raw_mode()?;
+  Ok(())
+}
+
+/// Handle key press events
+fn handle_inputs(app: &mut AppState) {
+  if event::poll(Duration::from_millis(100))? {
+    if let event::Event::Key(KeyEvent { code, .. }) = event::read()? {
+      match code {
+        KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
+        KeyCode::Char('s') => {
+          app.start_timer();
+        },
+        KeyCode::Char('d') => {
+          app.stop_timer();
+        }
+        _ => {}
+      }
+    }
+  }
+}
+
+/// Records history table
+fn render_history(f: &mut Frame, chunks: Rects) {
+  let table_block = Block::default()
+      .title("Table")
+      .borders(Borders::ALL)
+      .style(Style::default().fg(Color::White));
+  let headers = ["Header 1", "Header 2", "Header 3"];
+  let rows = vec![
+    Row::new(vec!["Row 1", "Data 1", "Data 1"]),
+    Row::new(vec!["Row 2", "Data 2", "Data 2"]),
+    Row::new(vec!["Row 3", "Data 3", "Data 3"]),
+  ];
+  let widths = vec![
+    Constraint::Min(20),
+    Constraint::Min(20),
+    Constraint::Min(20),
+  ];
+  let table = Table::new(rows, widths)
+      .header(Row::new(headers).style(Style::default().fg(Color::White)))
+      .block(table_block)
+      .widths(&[Constraint::Percentage(30), Constraint::Percentage(30), Constraint::Percentage(30)]);
+  f.render_widget(table, chunks[1]);
+}
+
+/// Timer container
+fn render_timer(mut app: &mut AppState, f: &mut Frame, chunks: &Rects) {
+  let timer_text = if app.timer_running {
+    let elapsed = format_duration(app.start_time.unwrap().elapsed());
+    format!(
+      "Running: {}.",
+      elapsed
+    )
+  } else {
+    "Stopped".to_string()
+  };
+
+  let log_text = app
+      .timer_logs
+      .iter()
+      .map(|log| Span::raw(log.clone()))
+      .collect::<Vec<_>>();
+  let list = List::new(log_text)
+      .block(Block::bordered().title("List"))
+      .highlight_style(Style::new().reversed())
+      .highlight_symbol(">>")
+      .repeat_highlight_symbol(true);
+
+  f.render_stateful_widget(list, chunks[0], &mut app.logs_state);
+  f.render_widget(ratatui::widgets::Paragraph::new(timer_text), chunks[0]);
+}
