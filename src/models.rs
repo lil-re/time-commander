@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-/// Extension
+/// Record
 /// Represents a Top Level Domain (.com, .net, .org...)
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Record {
@@ -17,5 +17,17 @@ impl Record {
       duration
     }
   }
+}
+
+
+/// Extension
+/// Represents a Top Level Domain (.com, .net, .org...)
+#[derive(Serialize, Deserialize, Debug)]
+pub struct History {
+  pub(crate) total_pauses: i32,
+  pub(crate) total_duration: i32,
+  pub(crate) record_date: String,
+  pub(crate) start_time: String,
+  pub(crate) end_time: String
 }
 

@@ -1,5 +1,5 @@
 use crate::database::connection::DB_CONNECTION;
-use crate::models::Record;
+use crate::models::{History, Record};
 
 /// Add a record
 pub fn create_record(record: &Record) -> Option<()> {
@@ -40,19 +40,29 @@ pub fn remove_record(record: &Record) -> Option<()> {
 }
 
 /// Get all records
-pub fn find_all_records() -> Vec<Record> {
+pub fn find_all_records() -> Vec<History> {
     let conn = DB_CONNECTION.lock().expect("Failed to lock the database connection");
 
-    let mut stmt = match conn.prepare("SELECT * FROM record") {
+    let mut stmt = match conn.prepare("\
+        SELECT count(id) -1 as total_pauses,\
+            sum(duration) as total_duration,\
+            date(created_at) as record_date,\
+            time(MIN(created_at)) as start_time,\
+            time(DATE_ADD(MAX(created_at), INTERVAL duration SECOND)) AS end_time\
+        FROM records\
+        GROUP BY record_date;\
+    ") {
         Ok(result) => result,
         Err(error) => panic!("{}", error)
     };
 
     let domains_iter = stmt.query_map([], |row| {
-        Ok(Record {
-            id: row.get(1)?,
-            created_at: row.get(2)?,
-            duration: row.get(3)?
+        Ok(History {
+            total_pauses: row.get(0)?,
+            total_duration: row.get(1)?,
+            record_date: row.get(2)?,
+            start_time: row.get(3)?,
+            end_time: row.get(4)?,
         })
     });
 

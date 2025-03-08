@@ -27,7 +27,7 @@ pub async fn run_app() -> io::Result<()> {
           .split(area);
 
       render_timer(&mut app, f, &chunks);
-      render_history(f, chunks);
+      render_history(&mut app, f, chunks);
     })?;
 
     handle_inputs(&mut app);
@@ -57,17 +57,20 @@ fn handle_inputs(app: &mut AppState) {
 }
 
 /// Records history table
-fn render_history(f: &mut Frame, chunks: Rects) {
+fn render_history(mut app: &mut AppState, f: &mut Frame, chunks: Rects) {
   let table_block = Block::default()
       .title("Table")
       .borders(Borders::ALL)
       .style(Style::default().fg(Color::White));
-  let headers = ["Header 1", "Header 2", "Header 3"];
-  let rows = vec![
-    Row::new(vec!["Row 1", "Data 1", "Data 1"]),
-    Row::new(vec!["Row 2", "Data 2", "Data 2"]),
-    Row::new(vec!["Row 3", "Data 3", "Data 3"]),
-  ];
+  let headers = ["Date", "Start", "End", "Total", "Pauses"];
+  let history = app.get_history();
+  let rows = history.iter().map(|h| Row::new(vec![
+    h.record_date,
+    h.start_time,
+    h.end_time,
+    h.total_duration.to_string(),
+    h.total_pauses.to_string(),
+  ]));
   let widths = vec![
     Constraint::Min(20),
     Constraint::Min(20),
