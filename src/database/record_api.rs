@@ -23,10 +23,11 @@ pub fn create_record(record: &Record) -> Option<()> {
 /// Remove a record
 pub fn remove_record(record: &Record) -> Option<()> {
     let conn = DB_CONNECTION.lock().expect("Failed to lock the database connection");
+    let id = Some(&record.id);
 
     let response = conn.execute(
         "DELETE FROM record WHERE id = ?1",
-        ((&record.id,)),
+        (id,),
     )
         .map_err(|e| format!("Failed to update record: {}", e));
 
@@ -44,12 +45,12 @@ pub fn find_all_records() -> Vec<History> {
     let conn = DB_CONNECTION.lock().expect("Failed to lock the database connection");
 
     let mut stmt = match conn.prepare("\
-        SELECT count(id) -1 as total_pauses,\
-            sum(duration) as total_duration,\
-            date(created_at) as record_date,\
-            time(MIN(created_at)) as start_time,\
-            time(DATE_ADD(MAX(created_at), INTERVAL duration SECOND)) AS end_time\
-        FROM records\
+        SELECT count(record.id) - 1 AS total_pauses,
+            sum(record.duration) AS total_duration,
+            DATE(record.created_at) AS record_date,
+            TIME(MIN(record.created_at)) AS start_time,
+            TIME(datetime(MAX(record.created_at), '+' || SUM(record.duration) || ' seconds')) AS end_time
+        FROM record
         GROUP BY record_date;\
     ") {
         Ok(result) => result,
@@ -67,7 +68,7 @@ pub fn find_all_records() -> Vec<History> {
     });
 
     let domains_result = match domains_iter {
-        Ok(result) => result.collect::<Result<Vec<Record>, rusqlite::Error>>(),
+        Ok(result) => result.collect::<Result<Vec<History>, rusqlite::Error>>(),
         Err(_) => Ok(vec![])
     };
 

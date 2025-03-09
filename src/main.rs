@@ -4,13 +4,7 @@ mod database;
 mod ui;
 mod helpers;
 
-use ratatui::{
-  style::{Stylize},
-};
-use std::{
-  io,
-  time::{Duration},
-};
+use std::io;
 use clap::Parser;
 use crate::database::connection;
 use crate::database::migrations::run_migrations;
@@ -31,7 +25,8 @@ async fn main() -> io::Result<()> {
   if args.init {
     connection::establish_connection().expect("DATABASE => Error establishing connection");
     run_migrations().expect("MIGRATION => Error while running migration");
+  } else {
+    run_app().await.expect("APP => An error occurred");
   }
-
-  run_app().await
+  Ok(())
 }

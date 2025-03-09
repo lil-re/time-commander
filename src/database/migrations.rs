@@ -15,7 +15,7 @@ fn create_record_table(conn: &MutexGuard<Connection>) -> Result<()> {
     let record_result = conn.execute("
         CREATE TABLE IF NOT EXISTS record (
             id INTEGER PRIMARY KEY,
-            created_at DATE NOT NULL,
+            created_at DATETIME NOT NULL,
             duration INTEGER NOT NULL
         )",
                                        [],

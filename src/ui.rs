@@ -1,9 +1,10 @@
 use std::io;
+use std::rc::Rc;
 use std::time::Duration;
 use crossterm::{event, terminal};
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::backend::CrosstermBackend;
-use ratatui::layout::{Constraint, Direction, Layout};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::prelude::{Color, Span, Style};
 use ratatui::{Frame, Terminal};
 use ratatui::widgets::{Block, Borders, List, Row, Table};
@@ -40,24 +41,27 @@ pub async fn run_app() -> io::Result<()> {
 
 /// Handle key press events
 fn handle_inputs(app: &mut AppState) {
-  if event::poll(Duration::from_millis(100))? {
-    if let event::Event::Key(KeyEvent { code, .. }) = event::read()? {
-      match code {
-        KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
-        KeyCode::Char('s') => {
-          app.start_timer();
-        },
-        KeyCode::Char('d') => {
-          app.stop_timer();
+  match event::poll(Duration::from_millis(100)) {
+    Ok(_) => {
+      if let Ok(event::Event::Key(KeyEvent { code, .. })) = event::read() {
+        match code {
+          KeyCode::Char('q') | KeyCode::Esc => (),
+          KeyCode::Char('s') => {
+            app.start_timer();
+          },
+          KeyCode::Char('d') => {
+            app.stop_timer();
+          }
+          _ => {}
         }
-        _ => {}
       }
     }
+    Err(_) => {}
   }
 }
 
 /// Records history table
-fn render_history(mut app: &mut AppState, f: &mut Frame, chunks: Rects) {
+fn render_history(app: &mut AppState, f: &mut Frame, chunks: Rc<[Rect]>) {
   let table_block = Block::default()
       .title("Table")
       .borders(Borders::ALL)
@@ -65,9 +69,9 @@ fn render_history(mut app: &mut AppState, f: &mut Frame, chunks: Rects) {
   let headers = ["Date", "Start", "End", "Total", "Pauses"];
   let history = app.get_history();
   let rows = history.iter().map(|h| Row::new(vec![
-    h.record_date,
-    h.start_time,
-    h.end_time,
+    h.record_date.clone(),
+    h.start_time.clone(),
+    h.end_time.clone(),
     h.total_duration.to_string(),
     h.total_pauses.to_string(),
   ]));
@@ -84,7 +88,7 @@ fn render_history(mut app: &mut AppState, f: &mut Frame, chunks: Rects) {
 }
 
 /// Timer container
-fn render_timer(mut app: &mut AppState, f: &mut Frame, chunks: &Rects) {
+fn render_timer(app: &mut AppState, f: &mut Frame, chunks: &Rc<[Rect]>) {
   let timer_text = if app.timer_running {
     let elapsed = format_duration(app.start_time.unwrap().elapsed());
     format!(
@@ -102,7 +106,7 @@ fn render_timer(mut app: &mut AppState, f: &mut Frame, chunks: &Rects) {
       .collect::<Vec<_>>();
   let list = List::new(log_text)
       .block(Block::bordered().title("List"))
-      .highlight_style(Style::new().reversed())
+      .highlight_style(Style::new())
       .highlight_symbol(">>")
       .repeat_highlight_symbol(true);
 
