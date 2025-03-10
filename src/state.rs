@@ -32,12 +32,13 @@ impl AppState {
       let start_date = self.start_date.clone().unwrap();
 
       self.add_log(start_time).expect("APP STATE => Could not add log");
-      self.add_record(start_time, start_date).expect("APP STATE => Could not add record")
+      self.add_record(start_time, start_date).expect("APP STATE => Could not add record");
+      self.set_history();
     }
   }
 
   fn add_log (&mut self, start_time: Instant) -> Result<(), &'static str> {
-    let elapsed = format_duration(start_time.elapsed());
+    let elapsed = format_duration(start_time.elapsed().as_secs());
     self.timer_logs.push(format!(
       "Timer stopped. Duration: {}.",
       elapsed
@@ -54,7 +55,7 @@ impl AppState {
     Ok(())
   }
 
-  pub fn get_history(&mut self) -> Vec<History> {
-    find_all_records()
+  pub fn set_history(&mut self) {
+    self.history = find_all_records();
   }
 }

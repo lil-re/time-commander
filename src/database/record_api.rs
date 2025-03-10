@@ -49,7 +49,7 @@ pub fn find_all_records() -> Vec<History> {
             sum(record.duration) AS total_duration,
             DATE(record.created_at) AS record_date,
             TIME(MIN(record.created_at)) AS start_time,
-            TIME(datetime(MAX(record.created_at), '+' || SUM(record.duration) || ' seconds')) AS end_time
+            TIME(datetime(MAX(record.created_at), '+' || record.duration || ' seconds')) AS end_time
         FROM record
         GROUP BY record_date;\
     ") {

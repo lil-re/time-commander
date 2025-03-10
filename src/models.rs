@@ -25,7 +25,7 @@ impl Record {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct History {
   pub(crate) total_pauses: i32,
-  pub(crate) total_duration: i32,
+  pub(crate) total_duration: u64,
   pub(crate) record_date: String,
   pub(crate) start_time: String,
   pub(crate) end_time: String
