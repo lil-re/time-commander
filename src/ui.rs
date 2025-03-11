@@ -4,11 +4,11 @@ use std::time::Duration;
 use crossterm::{event, terminal};
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::backend::CrosstermBackend;
-use ratatui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::prelude::{Color, Span, Style};
 use ratatui::{Frame, Terminal};
 use ratatui::style::Stylize;
-use ratatui::widgets::{Block, Borders, List, Row, Table};
+use ratatui::widgets::{Block, Borders, List, Padding, Paragraph, Row, Table};
 use tokio::time::sleep;
 use crate::helpers::format_duration;
 use crate::state::AppState;
@@ -93,27 +93,54 @@ fn render_history(app: &mut AppState, f: &mut Frame, chunks: Rc<[Rect]>) {
 
 /// Timer container
 fn render_timer(app: &mut AppState, f: &mut Frame, chunks: &Rc<[Rect]>) {
+  let inner_layout = Layout::default()
+      .direction(Direction::Vertical)
+      .constraints(vec![
+        Constraint::Min(4),
+        Constraint::Fill(50),
+        Constraint::Min(6),
+      ])
+      .split(chunks[0]);
+
   let timer_text = if app.timer_running {
     let elapsed = format_duration(app.start_time.unwrap().elapsed().as_secs());
-    format!(
-      "Running: {}.",
-      elapsed
-    )
+    vec![
+      Span::raw("Running".to_string()),
+      Span::raw(format!("{}", elapsed))
+    ]
   } else {
-    "Stopped".to_string()
+    vec![
+      Span::raw("Stopped".to_string())
+    ]
   };
+  let timer_list = List::new(timer_text)
+      .block(Block::bordered().title("Timer"))
+      .highlight_style(Style::new())
+      .highlight_symbol(">>")
+      .repeat_highlight_symbol(true);
+  f.render_widget(timer_list, inner_layout[0]);
 
-  let log_text = app
+  let logs_text = app
       .timer_logs
       .iter()
       .map(|log| Span::raw(log.clone()))
       .collect::<Vec<_>>();
-  let list = List::new(log_text)
-      .block(Block::bordered().title("List"))
+  let logs_list = List::new(logs_text)
+      .block(Block::bordered().title("Logs"))
       .highlight_style(Style::new())
       .highlight_symbol(">>")
       .repeat_highlight_symbol(true);
+  f.render_stateful_widget(logs_list, inner_layout[1], &mut app.logs_state);
 
-  f.render_stateful_widget(list, chunks[0], &mut app.logs_state);
-  f.render_widget(ratatui::widgets::Paragraph::new(timer_text), chunks[0]);
+  let commands_text = vec![
+    Span::raw("<s> Start timer".to_string()),
+    Span::raw("<d> Stop timer".to_string()),
+    Span::raw("<q> Quit".to_string()),
+  ];
+  let commands_list = List::new(commands_text)
+      .block(Block::bordered().title("Commands"))
+      .highlight_style(Style::new())
+      .highlight_symbol(">>")
+      .repeat_highlight_symbol(true);
+  f.render_widget(commands_list, inner_layout[2]);
 }
