@@ -3,6 +3,7 @@ mod state;
 mod database;
 mod ui;
 mod helpers;
+mod export;
 
 use std::io;
 use clap::Parser;

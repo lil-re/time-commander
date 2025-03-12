@@ -10,6 +10,7 @@ use ratatui::{Frame, Terminal};
 use ratatui::style::Stylize;
 use ratatui::widgets::{Block, Borders, List, Padding, Paragraph, Row, Table};
 use tokio::time::sleep;
+use crate::export::{export_history};
 use crate::helpers::format_duration;
 use crate::state::AppState;
 
@@ -40,8 +41,11 @@ pub(crate) async fn run_app() -> io::Result<()> {
           KeyCode::Char('s') => {
             app.start_timer();
           },
-          KeyCode::Char('d') => {
+          KeyCode::Char('p') => {
             app.stop_timer();
+          },
+          KeyCode::Char('e') => {
+            export_history(&app.history).expect("Error while exporting Records");
           }
           _ => {}
         }
@@ -134,7 +138,8 @@ fn render_timer(app: &mut AppState, f: &mut Frame, chunks: &Rc<[Rect]>) {
 
   let commands_text = vec![
     Span::raw("<s> Start timer".to_string()),
-    Span::raw("<d> Stop timer".to_string()),
+    Span::raw("<p> Pause timer".to_string()),
+    Span::raw("<e> Export records".to_string()),
     Span::raw("<q> Quit".to_string()),
   ];
   let commands_list = List::new(commands_text)
