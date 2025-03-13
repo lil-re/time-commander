@@ -14,15 +14,21 @@ use crate::export::{export_history};
 use crate::helpers::format_duration;
 use crate::state::AppState;
 
+/// Main app UI function that drives the entire terminal user interface.
+/// This function runs the UI in a loop, updates the UI, listens for user input,
+/// and reacts to keypress events (like starting/stopping the timer).
 pub(crate) async fn run_app() -> io::Result<()> {
   terminal::enable_raw_mode()?;
   let stdout = io::stdout();
   let backend = CrosstermBackend::new(stdout);
   let mut terminal = Terminal::new(backend)?;
+
+  // Initialize the app's state, which includes timer and history data
   let mut app = AppState::default();
   app.set_history();
 
   loop {
+    // Render UI layout
     terminal.draw(|f| {
       let area = f.area();
       let chunks: Rc<[Rect]> = get_chunks(area);
@@ -34,16 +40,20 @@ pub(crate) async fn run_app() -> io::Result<()> {
     if event::poll(Duration::from_millis(100))? {
       if let event::Event::Key(KeyEvent { code, .. }) = event::read()? {
         match code {
+          // Quit the app by stopping the timer and exiting
           KeyCode::Char('q') | KeyCode::Esc => {
             app.stop_timer();
             return Ok(())
           },
+          // Start time
           KeyCode::Char('s') => {
             app.start_timer();
           },
+          // Pause/stop timer
           KeyCode::Char('p') => {
             app.stop_timer();
           },
+          // Export history to csv file
           KeyCode::Char('e') => {
             export_history(&app.history).expect("Error while exporting Records");
           }
@@ -59,6 +69,14 @@ pub(crate) async fn run_app() -> io::Result<()> {
   Ok(())
 }
 
+/// Defines the layout chunks for the terminal UI.
+/// This function splits the terminal window into sections for rendering various parts of the app.
+///
+/// # Arguments
+/// - `area`: The total available space for rendering in the terminal window.
+///
+/// # Returns
+/// - A vector of `Rect` representing the different layout sections.
 fn get_chunks(area: Rect) -> Rc<[Rect]> {
   Layout::default()
       .direction(Direction::Horizontal)
@@ -67,8 +85,13 @@ fn get_chunks(area: Rect) -> Rc<[Rect]> {
       .split(area)
 }
 
-/// Records history table
-fn render_history(app: &mut AppState, f: &mut Frame, chunks: Rc<[Rect]>) {
+/// Renders the history table displaying records of timer activity.
+///
+/// # Arguments
+/// - `app`: The app state that contains the history to render.
+/// - `frame`: The terminal frame used to render the widget.
+/// - `chunks`: The layout chunks where this history table should be rendered.
+fn render_history(app: &mut AppState, frame: &mut Frame, chunks: Rc<[Rect]>) {
   let table_block = Block::default()
       .title("Table")
       .borders(Borders::ALL)
@@ -92,11 +115,17 @@ fn render_history(app: &mut AppState, f: &mut Frame, chunks: Rc<[Rect]>) {
       .header(Row::new(headers).style(Style::default().fg(Color::White)))
       .block(table_block)
       .widths(&[Constraint::Percentage(30), Constraint::Percentage(30), Constraint::Percentage(30), Constraint::Percentage(30), Constraint::Percentage(30)]);
-  f.render_widget(table, chunks[1]);
+  frame.render_widget(table, chunks[1]);
 }
 
-/// Timer container
-fn render_timer(app: &mut AppState, f: &mut Frame, chunks: &Rc<[Rect]>) {
+/// Shows the current timer status (running or stopped), logs, and commands available to the user.
+///
+/// # Arguments
+/// - `app`: The app state that contains the timer and logs to display.
+/// - `f`: The terminal frame used to render the widgets.
+/// - `chunks`: The layout chunks where this section should be rendered.
+fn render_timer(app: &mut AppState, frame: &mut Frame, chunks: &Rc<[Rect]>) {
+  // Create inner layout with 3 parts (timer, logs, command list)
   let inner_layout = Layout::default()
       .direction(Direction::Vertical)
       .constraints(vec![
@@ -106,6 +135,7 @@ fn render_timer(app: &mut AppState, f: &mut Frame, chunks: &Rc<[Rect]>) {
       ])
       .split(chunks[0]);
 
+  // Timer block
   let timer_text = if app.timer_running {
     let elapsed = format_duration(app.start_time.unwrap().elapsed().as_secs());
     vec![
@@ -122,8 +152,9 @@ fn render_timer(app: &mut AppState, f: &mut Frame, chunks: &Rc<[Rect]>) {
       .highlight_style(Style::new())
       .highlight_symbol(">>")
       .repeat_highlight_symbol(true);
-  f.render_widget(timer_list, inner_layout[0]);
+  frame.render_widget(timer_list, inner_layout[0]);
 
+  // Logs block
   let logs_text = app
       .timer_logs
       .iter()
@@ -134,8 +165,9 @@ fn render_timer(app: &mut AppState, f: &mut Frame, chunks: &Rc<[Rect]>) {
       .highlight_style(Style::new())
       .highlight_symbol(">>")
       .repeat_highlight_symbol(true);
-  f.render_stateful_widget(logs_list, inner_layout[1], &mut app.logs_state);
+  frame.render_stateful_widget(logs_list, inner_layout[1], &mut app.logs_state);
 
+  // Commands block
   let commands_text = vec![
     Span::raw("<s> Start timer".to_string()),
     Span::raw("<p> Pause timer".to_string()),
@@ -147,5 +179,5 @@ fn render_timer(app: &mut AppState, f: &mut Frame, chunks: &Rc<[Rect]>) {
       .highlight_style(Style::new())
       .highlight_symbol(">>")
       .repeat_highlight_symbol(true);
-  f.render_widget(commands_list, inner_layout[2]);
+  frame.render_widget(commands_list, inner_layout[2]);
 }

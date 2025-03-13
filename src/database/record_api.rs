@@ -1,7 +1,14 @@
 use crate::database::connection::DB_CONNECTION;
 use crate::models::{History, Record};
 
-/// Add a record
+/// Adds a new `Record` to the database.
+///
+/// # Arguments
+/// - `record`: The `Record` to be added, containing `created_at` and `duration`.
+///
+/// # Returns
+/// - `Some(())` if the record was successfully added.
+/// - `None` if an error occurred during insertion.
 pub fn create_record(record: &Record) -> Option<()> {
     let conn = DB_CONNECTION.lock().expect("Failed to lock the database connection");
 
@@ -20,7 +27,14 @@ pub fn create_record(record: &Record) -> Option<()> {
     }
 }
 
-/// Remove a record
+/// Removes a `Record` from the database.
+///
+/// # Arguments
+/// - `record`: The `Record` to be removed, identified by `id`.
+///
+/// # Returns
+/// - `Some(())` if the record was successfully removed.
+/// - `None` if an error occurred during the deletion.
 pub fn remove_record(record: &Record) -> Option<()> {
     let conn = DB_CONNECTION.lock().expect("Failed to lock the database connection");
     let id = Some(&record.id);
@@ -40,7 +54,14 @@ pub fn remove_record(record: &Record) -> Option<()> {
     }
 }
 
-/// Get all records
+
+/// Retrieves all records from the database and aggregates them into `History` objects.
+///
+/// This function groups records by date and calculates the total duration, start time,
+/// and end time for each group. The result is a list of `History` structs.
+///
+/// # Returns
+/// A `Vec<History>` containing aggregated data for each record date, or an empty vector if an error occurs.
 pub fn find_all_records() -> Vec<History> {
     let conn = DB_CONNECTION.lock().expect("Failed to lock the database connection");
 

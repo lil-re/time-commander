@@ -1,6 +1,7 @@
 use std::error::Error;
 use crate::models::History;
 
+/// Creates a CSV file containing Record history.
 pub fn export_history(history: &Vec<History>) -> Result<(), Box<dyn Error>> {
     // Create CSV writer
     let mut writer = match csv::Writer::from_path("time-commander.csv") {

@@ -17,6 +17,8 @@ pub struct AppState {
 }
 
 impl AppState {
+  /// Starts the timer and records the start time and date.
+  /// It also logs a message to alert the user that the timer has been started.
   pub fn start_timer(&mut self) {
     if !self.timer_running {
       self.timer_running = true;
@@ -26,6 +28,8 @@ impl AppState {
     }
   }
 
+  /// Stops the timer, records the elapsed time, and adds a new record to the database.
+  /// It also updates the history to reflect the new record.
   pub fn stop_timer(&mut self) {
     if self.timer_running {
       let start_time = self.start_time.unwrap();
@@ -37,6 +41,14 @@ impl AppState {
     }
   }
 
+  /// Adds a log message to indicate when the timer was stopped and the elapsed time.
+  ///
+  /// # Arguments
+  /// - `start_time`: The time when the timer was started, used to calculate elapsed time.
+  ///
+  /// # Returns
+  /// - `Ok(())` if the log was successfully added.
+  /// - `Err(&'static str)` if there was an issue adding the log.
   fn add_log (&mut self, start_time: Instant) -> Result<(), &'static str> {
     let elapsed = format_duration(start_time.elapsed().as_secs());
     self.timer_logs.push(format!(
@@ -48,13 +60,23 @@ impl AppState {
     Ok(())
   }
 
+  /// Adds a new `Record` to the database based on the elapsed time.
+  ///
+  /// # Arguments
+  /// - `start_time`: The time when the timer started, used to calculate elapsed time.
+  /// - `start_date`: The formatted date and time when the timer was started.
+  ///
+  /// # Returns
+  /// - `Ok(())` if the record was successfully added.
+  /// - `Err(&'static str)` if there was an issue adding the record.
   fn add_record (&mut self, start_time: Instant, start_date: String) -> Result<(), &'static str> {
     let duration = start_time.elapsed().as_secs();
-    let record = Record::new(start_date, duration);
+    let record = Record::new(duration, start_date);
     create_record(&record);
     Ok(())
   }
 
+  /// Retrieves the entire record history from the database and updates the app state.
   pub fn set_history(&mut self) {
     self.history = find_all_records();
   }

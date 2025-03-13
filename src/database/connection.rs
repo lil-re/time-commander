@@ -10,10 +10,6 @@ lazy_static! {
             Ok(connection) => connection,
             Err(_) => panic!("Failed to establish connection with database")
         }
-        // match Connection::open_in_memory() {
-        //     Ok(connection) => connection,
-        //     Err(_) => panic!("Failed to establish connection with database")
-        // }
     );
 }
 
