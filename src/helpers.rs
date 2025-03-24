@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 /// Transforms number of seconds to colon-separated time string (hh:mm:ss)
 ///
 /// # Example

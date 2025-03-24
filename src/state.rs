@@ -1,6 +1,6 @@
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::Instant;
 use chrono::Local;
-use ratatui::widgets::{ListState, TableState};
+use ratatui::widgets::{ListState};
 use crate::database::record_api::{create_record, find_all_records};
 use crate::helpers::format_duration;
 use crate::models::{History, Record};
@@ -13,7 +13,6 @@ pub struct AppState {
   pub timer_logs: Vec<String>,
   pub history: Vec<History>,
   pub logs_state: ListState,
-  pub history_state: TableState,
 }
 
 impl AppState {

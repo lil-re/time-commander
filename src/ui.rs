@@ -4,11 +4,10 @@ use std::time::Duration;
 use crossterm::{event, terminal};
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::backend::CrosstermBackend;
-use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::prelude::{Color, Span, Style};
 use ratatui::{Frame, Terminal};
-use ratatui::style::Stylize;
-use ratatui::widgets::{Block, Borders, List, Padding, Paragraph, Row, Table};
+use ratatui::widgets::{Block, Borders, List, Row, Table};
 use tokio::time::sleep;
 use crate::export::{export_history};
 use crate::helpers::format_duration;
@@ -64,9 +63,6 @@ pub(crate) async fn run_app() -> io::Result<()> {
 
     sleep(Duration::from_millis(100)).await;
   }
-
-  terminal::disable_raw_mode()?;
-  Ok(())
 }
 
 /// Defines the layout chunks for the terminal UI.
